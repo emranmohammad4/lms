@@ -1,0 +1,43 @@
+pipeline {
+    agent {
+      label 'slave-docker-server'
+    }
+
+    environment {
+
+    DOCKERHUB_CREDENTIALS = credentials('dockeremran')
+     registry = "emranmohammad4/frontend-lms"
+        registryCredential = 'dockeremran'
+    }
+
+    stages {
+        
+
+        stage('Building the docker image') {
+            steps {
+                sh 'cd webapp && docker build -t emranmohammad4/frontend-lms .'
+            }
+        }
+        stage('Logging into dockerhub account') {
+            steps {
+                sh 'echo $DOCKERHUB_CREDENTIALS_PSW | docker login -u $DOCKERHUB_CREDENTIALS_USR --password-stdin'
+            }
+        }
+        stage('pushing the docker image into dockerhub') {
+            steps {
+                  sh 'docker push emranmohammad4/frontend-lms'
+            }
+        }
+        stage('Remove old docker images') {
+             steps {
+                 sh 'docker rmi -f emranmohammad4/frontend-lms'
+            }
+        }
+         stage('Running the docker container') {
+            steps {
+                  sh 'docker container rm --force fe'
+                  sh 'docker run -dt -p 8000:80 --name fe emranmohammad4/frontend-lms'
+            }
+        }
+    }
+}
